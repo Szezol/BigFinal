@@ -4,6 +4,12 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,6 +36,15 @@ public class CSVDataReader extends DataReader
 		return false;
 	}
 
+	// public HashMap<Object, Double> sort(HashMap<Object, Double> hashMap){
+	// HashMap<Object, Double> newSortedHashMap = new HashMap<>();
+	// for (Object object : hashMap.entrySet())
+	// {
+	// for (Object newObject:newSortedHashMap.entrySet()){
+	// newSortedHashMap.
+	// }
+	// }
+	// }
 	public void addSkillToPersonInList(Person person, List<Person> personList, Skill skill)
 	{
 		if (!checkPersonIsInList(person, persons))
@@ -169,5 +184,62 @@ public class CSVDataReader extends DataReader
 		}
 		selectPersonBySkillFromList(string, searchType, persons, selectedPeople);
 		return selectedPeople;
+	}
+
+	public void runServer()
+	{
+		try
+		{
+			ServerSocket sc = new ServerSocket(1234);
+			Socket socket = sc.accept();
+			InputStream is = socket.getInputStream();
+			ObjectInputStream ois = new ObjectInputStream(is);
+			OutputStream os = socket.getOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(os);
+
+			int i;
+
+			while (true)
+			{
+				if ((i = is.read()) > -1)
+				{
+					try
+					{
+						Object object = ois.readObject();
+						if (object instanceof String)
+						{
+							Object object2 = ois.readObject();
+							if (object2 instanceof SearchType)
+							{
+								oos.write(1);
+								oos.writeObject(setPersons((String) object, (SearchType) object2));
+							}
+						}
+					} catch (ClassNotFoundException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+
+			oos.close();
+			os.close();
+			ois.close();
+			is.close();
+			socket.close();
+			sc.close();
+
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void main(String[] args)
+	{
+		CSVDataReader csvdr = new CSVDataReader("c:\\workspace\\BigFinalAssessment\\persons.csv");
+		csvdr.runServer();
 	}
 }
